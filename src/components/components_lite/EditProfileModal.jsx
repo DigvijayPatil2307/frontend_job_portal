@@ -161,17 +161,22 @@ const EditProfileModal = ({ open, setOpen }) => {
             <div className="space-y-2">
               <Label htmlFor="file" className="text-xs font-bold text-slate-500 uppercase">Update Resume (PDF)</Label>
               <div className="relative">
-                <FileText size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                <FileText size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 z-10" />
                 <input
                   id="file"
                   type="file"
                   accept="application/pdf"
                   onChange={fileChangeHandler}
-                  className="input-field pl-10 py-2 file:hidden text-slate-500 cursor-pointer"
+                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-20"
                 />
-                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-[#6A38C2] pointer-events-none">
-                  CHOOSE FILE
-                </span>
+                <div className="input-field pl-10 py-2.5 flex items-center justify-between bg-white">
+                  <span className={`truncate mr-4 ${input.file ? "text-slate-900 font-medium" : "text-slate-500"}`}>
+                    {input.file ? input.file.name : "Select a PDF resume"}
+                  </span>
+                  <span className="text-[10px] font-bold text-[#6A38C2] uppercase tracking-wider bg-[#6A38C2]/10 px-2 py-1 rounded-md shrink-0">
+                    {input.file ? "Change" : "Browse"}
+                  </span>
+                </div>
               </div>
               <p className="text-[10px] text-slate-400 italic mt-1">Uploading a new resume will trigger automatic skill extraction.</p>
             </div>

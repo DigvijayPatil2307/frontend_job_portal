@@ -20,7 +20,9 @@ import {
   ExternalLink,
   History,
   Sparkles,
-  Loader2
+  Loader2,
+  Trophy,
+  TrendingUp
 } from "lucide-react";
 import { useSelector } from "react-redux";
 import { toast } from "sonner";
@@ -39,6 +41,14 @@ const ApplicantsTable = () => {
   const { applicants } = useSelector((store) => store.application);
   const [summaries, setSummaries] = React.useState({});
   const [generatingSummaries, setGeneratingSummaries] = React.useState({});
+  const [showTopOnly, setShowTopOnly] = React.useState(false);
+
+  // Filter applications based on showTopOnly toggle
+  const displayedApplications = React.useMemo(() => {
+    const apps = applicants?.applications || [];
+    if (showTopOnly) return apps.filter((app) => (app.matchScore ?? 0) >= 75);
+    return apps;
+  }, [applicants?.applications, showTopOnly]);
 
   const generateSummaryHandler = async (applicantId, jobId) => {
     if (summaries[applicantId]) return; // Already generated
@@ -79,11 +89,32 @@ const ApplicantsTable = () => {
   };
 
   return (
-    <div className="bg-white rounded-[32px] border border-slate-100 shadow-sm overflow-hidden mb-12">
+    <div className="space-y-4 mb-12">
+      {/* Filter Bar */}
+      <div className="flex items-center justify-between px-2">
+        <p className="text-sm text-slate-500 font-medium">
+          <span className="font-black text-slate-800">{displayedApplications.length}</span>{" "}
+          {showTopOnly ? "top matches" : "total applicants"}
+        </p>
+        <button
+          onClick={() => setShowTopOnly((prev) => !prev)}
+          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black transition-all ${
+            showTopOnly
+              ? "bg-[#6A38C2] text-white shadow-lg shadow-[#6A38C2]/25"
+              : "bg-slate-100 text-slate-600 hover:bg-[#6A38C2]/10 hover:text-[#6A38C2]"
+          }`}
+        >
+          <Trophy size={14} />
+          {showTopOnly ? "Showing Top Matches" : "Show Top Matches Only"}
+        </button>
+      </div>
+
+      <div className="bg-white rounded-[32px] border border-slate-100 shadow-sm overflow-hidden">
       <Table>
-        <TableCaption className="pb-4 text-slate-400">Review and manage candidates for this position.</TableCaption>
+        <TableCaption className="pb-4 text-slate-400">Candidates are ranked by match score — best fits appear first.</TableCaption>
         <TableHeader className="bg-slate-50">
           <TableRow>
+            <TableHead className="font-bold text-slate-600">Match</TableHead>
             <TableHead className="font-bold text-slate-600">Applicant Info</TableHead>
             <TableHead className="font-bold text-slate-600">Top Skills (Extracted)</TableHead>
             <TableHead className="font-bold text-slate-600">Resume & Contact</TableHead>
@@ -93,9 +124,29 @@ const ApplicantsTable = () => {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {applicants?.applications?.length > 0 ? (
-            applicants.applications.map((item) => (
-              <TableRow key={item._id} className="hover:bg-slate-50/50 transition-colors group">
+          {displayedApplications.length > 0 ? (
+            displayedApplications.map((item) => {
+              const score = item.matchScore ?? 0;
+              const isTopMatch = score >= 75;
+              const scoreColor = score >= 75
+                ? "bg-green-50 text-green-700 border-green-200"
+                : score >= 50
+                ? "bg-amber-50 text-amber-700 border-amber-200"
+                : "bg-slate-50 text-slate-500 border-slate-200";
+              return (
+              <TableRow key={item._id} className={`hover:bg-slate-50/50 transition-colors group ${isTopMatch ? "bg-green-50/30" : ""}`}>
+                <TableCell>
+                  <div className="flex flex-col items-center gap-1">
+                    <div className={`text-sm font-black px-2.5 py-1 rounded-xl border ${scoreColor}`}>
+                      {score}%
+                    </div>
+                    {isTopMatch && (
+                      <span className="flex items-center gap-1 text-[9px] font-black text-amber-600">
+                        <Trophy size={10} className="text-amber-500" /> Top Match
+                      </span>
+                    )}
+                  </div>
+                </TableCell>
                 <TableCell>
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-2xl bg-[#6A38C2]/10 text-[#6A38C2] flex items-center justify-center font-bold text-sm border border-[#6A38C2]/20">
@@ -230,21 +281,25 @@ const ApplicantsTable = () => {
                   </Popover>
                 </TableCell>
               </TableRow>
-            ))
+              );
+            })
           ) : (
             <TableRow>
-              <TableCell colSpan={6} className="text-center py-20">
+              <TableCell colSpan={7} className="text-center py-20">
                 <div className="flex flex-col items-center gap-2">
                   <div className="w-12 h-12 bg-slate-50 rounded-2xl flex items-center justify-center text-slate-200">
                     <User size={24} />
                   </div>
-                  <p className="text-slate-400 font-medium text-sm italic">No applications received yet.</p>
+                  <p className="text-slate-400 font-medium text-sm italic">
+                    {showTopOnly ? "No top matches found. Try viewing all applicants." : "No applications received yet."}
+                  </p>
                 </div>
               </TableCell>
             </TableRow>
           )}
         </TableBody>
       </Table>
+    </div>
     </div>
   );
 };
